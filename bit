@@ -15,7 +15,6 @@ init() {
 
 add() {
 	FILE="$1"
-	echo "$FILE"
 	if [ -z "$FILE" ]; then
 		echo "No file provided"
 	else if [ -f "$FILE" ]; then
@@ -29,9 +28,64 @@ add() {
 
 }
 
+bitrm() {
+	FILE="$1"
+	if [ -z "$FILE" ]; then
+		echo "No file provided"
+	else if [ -f "$FILE" ]; then
+		if [ -f "$BITDIR/$FILE" ]; then
+			echo "Removing $FILE"
+			rm "$FILE" "$BITDIR/$FILE"
+		else
+			echo "$FILE not found in $BITDIR"
+		fi
+	else
+		echo "File not found"
+	fi
+	fi
+}
+
+clean() {
+	NORMALFILES="$(find . -mindepth 1 | cut -d "/" -f2- | grep -v "^.git\|^.bit")"
+	BITFILES="$(find .bit/ -mindepth 1 | cut -d "/" -f2-)"
+	ERRANT=""
+	bitLoopPipe=$(mktemp -u)
+	mkfifo "$bitLoopPipe"
+	echo "$BITFILES" > "$bitLoopPipe" &
+	while read file; do
+	exists=""
+		normalLoopPipe=$(mktemp -u)
+		mkfifo "$normalLoopPipe"
+		echo "$NORMALFILES" > "$normalLoopPipe" &
+		while read nfile; do
+			[ "$nfile" = "$file" ] && exists="true"
+		done < "$normalLoopPipe"
+	[ -z "$exists" ] && ERRANT="$ERRANT$file\n"
+	done < "$bitLoopPipe"
+	if [ -n "$ERRANT" ]; then
+		echo "Unreferenced files found:"
+		printf "$ERRANT"
+		read -p "Delete? Y/n: " response
+		if [ "$response" = "" ] || [ "$response" = "y" ] || [ "$response" = "yes" ]; then
+			printf "$ERRANT" | while read file; do
+				echo "Removing $file"
+				rm "$BITDIR/$file"
+			done
+		fi
+	else
+		echo "No unreferenced files found."
+	fi
+}
+
 if [ "$USERCOMMAND" = "init" ]; then
 	init
 else if [ "$USERCOMMAND" = "add" ]; then
 	add "$2"
+else if [ "$USERCOMMAND" = "rm" ]; then
+	bitrm "$2"
+else if [ "$USERCOMMAND" = "clean" ]; then
+	clean
+fi
+fi
 fi
 fi
