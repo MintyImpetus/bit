@@ -1,0 +1,37 @@
+#!/bin/sh
+
+USERCOMMAND="$1"
+
+SYNCCOMMAND="rsync -r"
+
+BITDIR=".bit/"
+CONFIGFILE="$BITDIR/config"
+[ -f $CONFIGFILE ] && . "$CONFIGFILE"
+
+init() {
+	mkdir -p "$BITDIR"
+	echo "$BITDIR" >> .gitignore
+}
+
+add() {
+	FILE="$1"
+	echo "$FILE"
+	if [ -z "$FILE" ]; then
+		echo "No file provided"
+	else if [ -f "$FILE" ]; then
+		echo "Adding $FILE"
+		mv "$FILE" "$BITDIR/$FILE"
+		ln -s "$BITDIR/$FILE" "$FILE"
+	else
+		echo "File not found"
+	fi
+	fi
+
+}
+
+if [ "$USERCOMMAND" = "init" ]; then
+	init
+else if [ "$USERCOMMAND" = "add" ]; then
+	add "$2"
+fi
+fi
