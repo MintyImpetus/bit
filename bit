@@ -2,15 +2,25 @@
 
 USERCOMMAND="$1"
 
-SYNCCOMMAND="rsync -r"
+SYNCCOMMAND="rsync -ru"
 
-BITDIR=".bit/"
+BITDIR=".bit"
+BITSTORAGE="$BITDIR/files/"
+BAREBITDIR="bit"
 CONFIGFILE="$BITDIR/config"
 [ -f $CONFIGFILE ] && . "$CONFIGFILE"
 
 init() {
-	mkdir -p "$BITDIR"
-	echo "$BITDIR" >> .gitignore
+	if [ -z "$1" ]; then
+		mkdir -p "$BITDIR" "$BITSTORAGE"
+		echo "$BITDIR/" >> .gitignore
+	else if [ "$1" = "--bare" ]; then
+		mkdir "bit"
+		echo "Empty bit repository initialized."
+	else
+		echo "Command $1 not recognised."
+	fi
+	fi
 }
 
 add() {
@@ -19,8 +29,8 @@ add() {
 		echo "No file provided"
 	else if [ -f "$FILE" ]; then
 		echo "Adding $FILE"
-		mv "$FILE" "$BITDIR/$FILE"
-		ln -s "$BITDIR/$FILE" "$FILE"
+		mv "$FILE" "$BITSTORAGE/$FILE"
+		ln -s "$BITSTORAGE/$FILE" "$FILE"
 	else
 		echo "File not found"
 	fi
@@ -33,11 +43,11 @@ bitrm() {
 	if [ -z "$FILE" ]; then
 		echo "No file provided"
 	else if [ -f "$FILE" ]; then
-		if [ -f "$BITDIR/$FILE" ]; then
+		if [ -f "$BITSTORAGE/$FILE" ]; then
 			echo "Removing $FILE"
-			rm "$FILE" "$BITDIR/$FILE"
+			rm "$FILE" "$BITSTORAGE/$FILE"
 		else
-			echo "$FILE not found in $BITDIR"
+			echo "$FILE not found in $BITSTORAGE"
 		fi
 	else
 		echo "File not found"
@@ -47,7 +57,7 @@ bitrm() {
 
 clean() {
 	NORMALFILES="$(find . -mindepth 1 | cut -d "/" -f2- | grep -v "^.git\|^.bit")"
-	BITFILES="$(find .bit/ -mindepth 1 | cut -d "/" -f2-)"
+	BITFILES="$(find .bit/ -mindepth 2 | cut -d "/" -f3-)"
 	ERRANT=""
 	bitLoopPipe=$(mktemp -u)
 	mkfifo "$bitLoopPipe"
@@ -69,7 +79,7 @@ clean() {
 		if [ "$response" = "" ] || [ "$response" = "y" ] || [ "$response" = "yes" ]; then
 			printf "$ERRANT" | while read file; do
 				echo "Removing $file"
-				rm "$BITDIR/$file"
+				rm "$BITSTORAGE/$file"
 			done
 		fi
 	else
@@ -77,14 +87,33 @@ clean() {
 	fi
 }
 
+pull() {
+	echo "Syncing bit storage..."
+	[ -z "$GITREMOTEORIGIN"] && git ls-remote && GITREMOTEORIGIN="$(git remote -v | grep "^origin.*(fetch)" | cut -d "$(printf "\t")" -f2 | rev | cut -d " " -f2- | rev)" || echo "Remote not found"
+	$SYNCCOMMAND "$GITREMOTEORIGIN.git/$BAREBITDIR/" "$BITSTORAGE"
+}
+
+push() {
+	echo "Pushing bit storage..."
+	[ -z "$GITREMOTEORIGIN"] && git ls-remote && GITREMOTEORIGIN="$(git remote -v | grep "^origin.*(fetch)" | cut -d "$(printf "\t")" -f2 | rev | cut -d " " -f2- | rev)" || echo "Remote not found"
+	$SYNCCOMMAND "$BITSTORAGE" "$GITREMOTEORIGIN.git/$BAREBITDIR/" 
+
+}
+
 if [ "$USERCOMMAND" = "init" ]; then
-	init
+	init "$2"
 else if [ "$USERCOMMAND" = "add" ]; then
 	add "$2"
 else if [ "$USERCOMMAND" = "rm" ]; then
 	bitrm "$2"
 else if [ "$USERCOMMAND" = "clean" ]; then
 	clean
+else if [ "$USERCOMMAND" = "pull" ]; then
+	pull
+else if [ "$USERCOMMAND" = "push" ]; then
+	push
+fi
+fi
 fi
 fi
 fi
