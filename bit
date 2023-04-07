@@ -46,6 +46,7 @@ bitrm() {
 		if [ -f "$BITSTORAGE/$FILE" ]; then
 			echo "Removing $FILE"
 			rm "$FILE" "$BITSTORAGE/$FILE"
+			echo "$FILE" >> "$BITDIR/delete"
 		else
 			echo "$FILE not found in $BITSTORAGE"
 		fi
@@ -80,6 +81,7 @@ clean() {
 			printf "$ERRANT" | while read file; do
 				echo "Removing $file"
 				rm "$BITSTORAGE/$file"
+				echo "$file" >> "$BITDIR/delete"
 			done
 		fi
 	else
@@ -97,6 +99,7 @@ push() {
 	echo "Pushing bit storage..."
 	[ -z "$GITREMOTEORIGIN"] && git ls-remote && GITREMOTEORIGIN="$(git remote -v | grep "^origin.*(fetch)" | cut -d "$(printf "\t")" -f2 | rev | cut -d " " -f2- | rev)" || echo "Remote not found"
 	$SYNCCOMMAND "$BITSTORAGE" "$GITREMOTEORIGIN.git/$BAREBITDIR/" 
+	echo "" > "$BITDIR/delete"
 
 }
 
