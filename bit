@@ -3,9 +3,10 @@
 USERCOMMAND="$1"
 
 SYNCCOMMAND="rsync -ru"
+RCONCOMMAND="ssh"
 
 BITDIR=".bit"
-BITSTORAGE="$BITDIR/files/"
+BITSTORAGE="$BITDIR/files"
 BAREBITDIR="bit"
 CONFIGFILE="$BITDIR/config"
 [ -f $CONFIGFILE ] && . "$CONFIGFILE"
@@ -92,15 +93,17 @@ clean() {
 pull() {
 	echo "Syncing bit storage..."
 	[ -z "$GITREMOTEORIGIN"] && git ls-remote && GITREMOTEORIGIN="$(git remote -v | grep "^origin.*(fetch)" | cut -d "$(printf "\t")" -f2 | rev | cut -d " " -f2- | rev)" || echo "Remote not found"
-	$SYNCCOMMAND "$GITREMOTEORIGIN.git/$BAREBITDIR/" "$BITSTORAGE"
+	$SYNCCOMMAND "$GITREMOTEORIGIN.git/$BAREBITDIR/files/" "$BITSTORAGE"
 }
 
 push() {
 	echo "Pushing bit storage..."
 	[ -z "$GITREMOTEORIGIN"] && git ls-remote && GITREMOTEORIGIN="$(git remote -v | grep "^origin.*(fetch)" | cut -d "$(printf "\t")" -f2 | rev | cut -d " " -f2- | rev)" || echo "Remote not found"
-	$SYNCCOMMAND "$BITSTORAGE" "$GITREMOTEORIGIN.git/$BAREBITDIR/" 
+	$SYNCCOMMAND "$BITSTORAGE/" "$GITREMOTEORIGIN.git/$BAREBITDIR/files" 
+	HOST="$(echo "$GITREMOTEORIGIN" | cut -d ":" -f1)"
+	FILESTODELETE="$(cat $BITDIR/delete)"
+	$RCONCOMMAND "$HOST" "echo $FILESTODELETE | while read file; do rm $BAREBITDIR/files/\$file; done"
 	echo "" > "$BITDIR/delete"
-
 }
 
 if [ "$USERCOMMAND" = "init" ]; then
