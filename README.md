@@ -6,4 +6,4 @@ Aims to use symlinks to remotely sync files to minimise the time git takes to pu
 
 ## Tasks to complete:
 
-Decide how best to store files, and refactor bit add and bit rm accordingly.
+- Decide how best to store files, and refactor bit add and bit rm accordingly.
