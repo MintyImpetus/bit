@@ -1,26 +1,41 @@
 #!/bin/sh
+#This is where I plan for how to make bit delete files:
+#
 
 USERCOMMAND="$1"
 
-SYNCCOMMAND="rsync -ru"
-RCONCOMMAND="ssh"
+SYNCCOMMAND="rsync -ru --delete --progress"
+RCONCOMMAND="echo This is not supposed to happen "
 
 BITDIR=".bit"
 BITSTORAGE="$BITDIR/files"
-BAREBITDIR="bit"
 CONFIGFILE="$BITDIR/config"
-[ -f $CONFIGFILE ] && . "$CONFIGFILE"
+
+if [ "$USERCOMMAND" = "init" ]; then
+	wait
+else
+	if [ -f $CONFIGFILE ]; then 
+		. "$CONFIGFILE"
+		CURRENTDIR="$(pwd)"
+		if [ "$ROOT" = "$CURRENTDIR" ]; then
+			wait
+		else
+			echo "Must be in root to run bit"
+		fi
+	else
+		echo "Configuration file not found."
+		exit
+	fi
+fi
 
 init() {
 	if [ -z "$1" ]; then
 		mkdir -p "$BITDIR" "$BITSTORAGE"
 		echo "$BITDIR/" >> .gitignore
-	else if [ "$1" = "--bare" ]; then
-		mkdir "bit"
-		echo "Empty bit repository initialized."
+		echo "ROOT=$(pwd)" >> "$BITDIR/config"
+		echo "BITREMOTEORIGIN=" >> "$BITDIR/config"
 	else
 		echo "Command $1 not recognised."
-	fi
 	fi
 }
 
@@ -92,18 +107,14 @@ clean() {
 
 pull() {
 	echo "Syncing bit storage..."
-	[ -z "$GITREMOTEORIGIN"] && git ls-remote && GITREMOTEORIGIN="$(git remote -v | grep "^origin.*(fetch)" | cut -d "$(printf "\t")" -f2 | rev | cut -d " " -f2- | rev)" || echo "Remote not found"
-	$SYNCCOMMAND "$GITREMOTEORIGIN.git/$BAREBITDIR/files/" "$BITSTORAGE"
+	[ -z "$BITREMOTEORIGIN" ] && echo "No remote found in $CONFIGFILE"
+	$SYNCCOMMAND "$BITREMOTEORIGIN" "$ROOT/$BITSTORAGE"
 }
 
 push() {
 	echo "Pushing bit storage..."
-	[ -z "$GITREMOTEORIGIN"] && git ls-remote && GITREMOTEORIGIN="$(git remote -v | grep "^origin.*(fetch)" | cut -d "$(printf "\t")" -f2 | rev | cut -d " " -f2- | rev)" || echo "Remote not found"
-	$SYNCCOMMAND "$BITSTORAGE/" "$GITREMOTEORIGIN.git/$BAREBITDIR/files" 
-	HOST="$(echo "$GITREMOTEORIGIN" | cut -d ":" -f1)"
-	FILESTODELETE="$(cat $BITDIR/delete)"
-	$RCONCOMMAND "$HOST" "echo $FILESTODELETE | while read file; do rm $BAREBITDIR/files/\$file; done"
-	echo "" > "$BITDIR/delete"
+	[ -z "$BITREMOTEORIGIN" ] && echo "No remote found in $CONFIGFILE"
+	$SYNCCOMMAND "$ROOT/$BITSTORAGE/" "$BITREMOTEORIGIN" 
 }
 
 if [ "$USERCOMMAND" = "init" ]; then
