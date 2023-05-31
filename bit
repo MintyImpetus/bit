@@ -17,11 +17,6 @@ else
 	if [ -f $CONFIGFILE ]; then 
 		. "$CONFIGFILE"
 		CURRENTDIR="$(pwd)"
-		if [ "$ROOT" = "$CURRENTDIR" ]; then
-			wait
-		else
-			echo "Must be in root to run bit"
-		fi
 	else
 		echo "Configuration file not found."
 		exit
@@ -32,7 +27,6 @@ init() {
 	if [ -z "$1" ]; then
 		mkdir -p "$BITDIR" "$BITSTORAGE"
 		echo "$BITDIR/" >> .gitignore
-		echo "ROOT=$(pwd)" >> "$BITDIR/config"
 		echo "BITREMOTEORIGIN=" >> "$BITDIR/config"
 	else
 		echo "Command $1 not recognised."
@@ -108,13 +102,13 @@ clean() {
 pull() {
 	echo "Syncing bit storage..."
 	[ -z "$BITREMOTEORIGIN" ] && echo "No remote found in $CONFIGFILE"
-	$SYNCCOMMAND "$BITREMOTEORIGIN" "$ROOT/$BITSTORAGE"
+	$SYNCCOMMAND "$BITREMOTEORIGIN" "$BITSTORAGE"
 }
 
 push() {
 	echo "Pushing bit storage..."
 	[ -z "$BITREMOTEORIGIN" ] && echo "No remote found in $CONFIGFILE"
-	$SYNCCOMMAND "$ROOT/$BITSTORAGE/" "$BITREMOTEORIGIN" 
+	$SYNCCOMMAND "$BITSTORAGE/" "$BITREMOTEORIGIN" 
 }
 
 if [ "$USERCOMMAND" = "init" ]; then
