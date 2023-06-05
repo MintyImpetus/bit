@@ -1,6 +1,4 @@
 #!/bin/sh
-#This is where I plan for how to make bit delete files:
-#
 
 USERCOMMAND="$1"
 
@@ -53,10 +51,10 @@ bitrm() {
 	if [ -z "$FILE" ]; then
 		echo "No file provided"
 	else if [ -f "$FILE" ]; then
-		if [ -f "$BITSTORAGE/$FILE" ]; then
+		LINKEDFILE="$(readlink -f "$FILE")"
+		if [ -f "$LINKEDFILE" ]; then
 			echo "Removing $FILE"
-			rm "$FILE" "$BITSTORAGE/$FILE"
-			echo "$FILE" >> "$BITDIR/delete"
+			rm "$FILE" "$LINKEDFILE"
 		else
 			echo "$FILE not found in $BITSTORAGE"
 		fi
