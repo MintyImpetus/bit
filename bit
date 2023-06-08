@@ -37,8 +37,9 @@ add() {
 		echo "No file provided"
 	else if [ -f "$FILE" ]; then
 		echo "Adding $FILE"
-		mv "$FILE" "$BITSTORAGE/$FILE"
-		ln -s "$BITSTORAGE/$FILE" "$FILE"
+		NEWFILE="$(tr -cd "[:alnum:]" < /dev/random | head -c 10)"
+		mv "$FILE" "$BITSTORAGE/$NEWFILE"
+		ln -s "$BITSTORAGE/$NEWFILE" "$FILE"
 	else
 		echo "File not found"
 	fi
