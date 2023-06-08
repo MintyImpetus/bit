@@ -47,7 +47,7 @@ add() {
 
 }
 
-bitrm() {
+remove() {
 	FILE="$1"
 	if [ -z "$FILE" ]; then
 		echo "No file provided"
@@ -115,7 +115,7 @@ if [ "$USERCOMMAND" = "init" ]; then
 else if [ "$USERCOMMAND" = "add" ]; then
 	add "$2"
 else if [ "$USERCOMMAND" = "rm" ]; then
-	bitrm "$2"
+	remove "$2"
 else if [ "$USERCOMMAND" = "clean" ]; then
 	clean
 else if [ "$USERCOMMAND" = "pull" ]; then
