@@ -38,7 +38,7 @@ add() {
 		echo "Adding $FILE"
 		NEWFILE="$(tr -cd "[:alnum:]" < /dev/random | head -c 10)"
 		mv "$FILE" "$BITSTORAGE/$NEWFILE"
-		ln -s "$BITSTORAGE/$NEWFILE" "$FILE"
+		ln "$BITSTORAGE/$NEWFILE" "$FILE"
 	else
 		echo "File not found"
 	fi
