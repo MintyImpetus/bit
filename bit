@@ -3,7 +3,6 @@
 USERCOMMAND="$1"
 
 SYNCCOMMAND="rsync -ru --delete --progress"
-RCONCOMMAND="echo This is not supposed to happen "
 
 BITDIR=".bit"
 BITSTORAGE="$BITDIR/files"
