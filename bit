@@ -65,36 +65,7 @@ remove() {
 }
 
 clean() {
-	NORMALFILES="$(find . -mindepth 1 | cut -d "/" -f2- | grep -v "^.git\|^.bit")"
-	BITFILES="$(find .bit/ -mindepth 2 | cut -d "/" -f3-)"
-	ERRANT=""
-	bitLoopPipe=$(mktemp -u)
-	mkfifo "$bitLoopPipe"
-	echo "$BITFILES" > "$bitLoopPipe" &
-	while read file; do
-	exists=""
-		normalLoopPipe=$(mktemp -u)
-		mkfifo "$normalLoopPipe"
-		echo "$NORMALFILES" > "$normalLoopPipe" &
-		while read nfile; do
-			[ "$nfile" = "$file" ] && exists="true"
-		done < "$normalLoopPipe"
-	[ -z "$exists" ] && ERRANT="$ERRANT$file\n"
-	done < "$bitLoopPipe"
-	if [ -n "$ERRANT" ]; then
-		echo "Unreferenced files found:"
-		printf "$ERRANT"
-		read -p "Delete? Y/n: " response
-		if [ "$response" = "" ] || [ "$response" = "y" ] || [ "$response" = "yes" ]; then
-			printf "$ERRANT" | while read file; do
-				echo "Removing $file"
-				rm "$BITSTORAGE/$file"
-				echo "$file" >> "$BITDIR/delete"
-			done
-		fi
-	else
-		echo "No unreferenced files found."
-	fi
+	echo "This command in unimplemented."
 }
 
 pull() {
